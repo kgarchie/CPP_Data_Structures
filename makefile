@@ -1,6 +1,6 @@
 # Makefile for CS210 PA2
 CC = g++
-CFLAGS = -g -std=c++1y
+CFLAGS = -g -std=c11
 #include <memory>
 EXECUTABLES = PQOrdered PQLinkedList PQHeap
 HEADERS = PriorityQueue.h TestDriver.h

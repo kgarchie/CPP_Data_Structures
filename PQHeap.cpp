@@ -1,141 +1,178 @@
+#include <iostream>
 //// PQHeap.cpp
 //// Implement your Heap Priority Queue in this file
 #include "PriorityQueue.h"
-#include "TestDriver.h"
+
 // Your code here
 
-#include <iostream>
+#include <string>
+#include <memory>
 
+namespace std{
+    template<class T> struct _Unique_if {
+        typedef unique_ptr<T> _Single_object;
+    };
 
-// Constructor
+    template<class T> struct _Unique_if<T[]> {
+        typedef unique_ptr<T[]> _Unknown_bound;
+    };
+
+    template<class T, size_t N> struct _Unique_if<T[N]> {
+        typedef void _Known_bound;
+    };
+
+    template<class T, class... Args>
+    typename _Unique_if<T>::_Single_object
+    make_unique(Args&&... args) {
+        return unique_ptr<T>(new T(std::forward<Args>(args)...));
+    }
+
+    template<class T>
+    typename _Unique_if<T>::_Unknown_bound
+    make_unique(size_t n) {
+        typedef typename remove_extent<T>::type U;
+        return unique_ptr<T>(new U[n]());
+    }
+
+    template<class T, class... Args>
+    typename _Unique_if<T>::_Known_bound
+    make_unique(Args&&...) = delete;
+}
+
+// Constructors
 PriorityQueue::PriorityQueue() {
     max_capacity = DEFAULT_MAX_CAPACITY;
-    pq = std::make_unique<Element[]>(DEFAULT_MAX_CAPACITY);
+    pq = std::make_unique<Element[]>(max_capacity);
 }
 
-// Parameterized constructor
 PriorityQueue::PriorityQueue(int size) {
     max_capacity = size;
-    pq = std::make_unique<Element[]>(size);
+    pq = std::make_unique<Element[]>(max_capacity);
 }
 
+// Inserts a new object into the priority queue. Returns true if the insertion is successful. If the PQ is full, the insertion is aborted, and the method returns false.
 bool PriorityQueue::insert(Element &element) {
-    if (size() == max_capacity) {
+    if (isFull()) {
         return false;
-    }
-
-    if (size() == 0) {
-        pq[0] = element;
+    } else {
+        for (int i = 0; i < max_capacity; i++) {
+            if (pq[i].name == "None") {
+                pq[i] = element;
+                pq[i].fifo = i;
+                break;
+            }
+        }
         return true;
     }
-
-    // find correct insertion point
-    int insertIndex = 0;
-    // compare priorities
-    if (pq[0].priority < element.priority) {
-
-    } else if (pq[0].priority > element.priority) {
-
-    } else {
-        // compare fifo
-        if (pq[0].fifo < element.fifo) {
-
-        } else if (pq[0].fifo > element.fifo) {
-
-        }
-    }
-    // insert element
-    pq[insertIndex] = element;
-    return true;
 }
 
+// The object of the highest priority must be the one returned by the remove() method; and if multiple objects have the same priority, the one in the queue the longest shall be returned, ie, FIFO return order must be preserved for objects of identical priority. Returns the default constructed Element if the PQ is empty.
 Element PriorityQueue::remove() {
     if (isEmpty()) {
-        Element element;
-        return element;
-    }
-
-    Element element = pq[0];
-    // shift all other cells down by one
-    for (int i = 0; i < size(); i++) {
-        pq[i] = pq[i + 1];
-    }
-
-    return element;
-}
-
-bool PriorityQueue::del(Element &element) {
-    if (isEmpty()) {
-        return false;
-    }
-
-    bool isFound = false;
-    // find index of element to delete
-    int i = 0;
-    for (; i < size(); i++) {
-        if (pq[i].name == element.name) {
-            isFound = true;
-            break;
+        return Element();
+    } else {
+        Element highest = pq[0];
+        for (int i = 0; i < max_capacity; i++) {
+            if (pq[i].priority > highest.priority) {
+                highest = pq[i];
+            } else if (pq[i].priority == highest.priority && pq[i].fifo < highest.fifo) {
+                highest = pq[i];
+            }
         }
+        for (int i = 0; i < max_capacity; i++) {
+            if (pq[i].name == highest.name && pq[i].priority == highest.priority && pq[i].fifo == highest.fifo) {
+                pq[i].name = "None";
+                pq[i].priority = -1;
+            }
+        }
+        return highest;
     }
+}
 
-    // if element is not found, return false
-    if (!isFound) {
+// Deletes all instances of the parameter from the PQ if found, and returns true. Returns false if no match to the parameter obj is found.
+bool PriorityQueue::del(Element &element) {
+    if (contains(element)) {
+        for (int i = 0; i < max_capacity; i++) {
+            if (pq[i].name == element.name && pq[i].priority == element.priority) {
+                pq[i].name = "None";
+                pq[i].priority = -1;
+                pq[i].fifo = -1;
+            }
+        }
+        return true;
+    } else {
         return false;
     }
-
-    // shift all other cells down by one
-    for (int j = i; j < size(); j++) {
-        pq[j] = pq[j + 1];
-    }
-
-    return true;
 }
+
+// Returns the object of highest priority in the PQ; if multiple objects have the same highest priority, return the one that has been in the PQ the longest, but does NOT remove it. Returns default constructed Element if the PQ is empty.
 
 Element PriorityQueue::peek() {
     if (isEmpty()) {
-        Element element;
-        return element;
-    }
+        return Element();
+    } else {
+        Element highest = pq[0];
 
-    return pq[0];
+        for (int i = 0; i < max_capacity; i++) {
+            if (pq[i].priority > highest.priority) {
+                highest = pq[i];
+            } else if (pq[i].priority == highest.priority && pq[i].fifo < highest.fifo) {
+                highest = pq[i];
+            }
+        }
+        return highest;
+    }
 }
 
+// Returns true if the pq contains the specified element
 bool PriorityQueue::contains(Element &element) {
-    for (int i = 0; i < size(); i++) {
-        if (pq[i].name == element.name) {
+    for (int i = 0; i < max_capacity; i++) {
+        if (pq[i].name == element.name && pq[i].priority == element.priority) {
             return true;
         }
     }
     return false;
 }
 
+// Returns the number of objects currently in the PQ.
 int PriorityQueue::size() {
-    // iterate through all elements
-    int count = 0;
+    int size = 0;
     for (int i = 0; i < max_capacity; i++) {
         if (pq[i].name != "None") {
-            count++;
+            size++;
         }
     }
-    return count;
+    return size;
 }
 
+// Returns the PQ to its default state.
 void PriorityQueue::clear() {
     for (int i = 0; i < max_capacity; i++) {
         pq[i].name = "None";
         pq[i].priority = -1;
+        pq[i].fifo = -1;
     }
 }
 
+// Returns true if the PQ is empty
 bool PriorityQueue::isEmpty() {
-    return size() == 0;
+    for (int i = 0; i < max_capacity; i++) {
+        if (pq[i].name != "None") {
+            return false;
+        }
+    }
+    return true;
 }
 
+// Returns true if the PQ is full
 bool PriorityQueue::isFull() {
-    return size() == max_capacity;
+    for (int i = 0; i < max_capacity; i++) {
+        if (pq[i].name == "None") {
+            return false;
+        }
+    }
+    return true;
 }
-
 
 
 /* IMPORTANT: main() must be EXACTLY how it was provided
@@ -146,37 +183,6 @@ bool PriorityQueue::isFull() {
 ** you before submission.
 */
 int main() {
-   test_PQHeap();
-   return 0;
+    test_PQHeap();
+    return 0;
 }
-
-
-/*
-Uncomment the below code to quickly test
-*/
-
-// int main() {
-
-//     PriorityQueue pq(7);
-
-//     Element element1("Tom", 3);
-//     Element element2("John", 5);
-//     Element element3("Mike", 4);
-//     Element element4("Chris", 1);
-//     Element element5("Peter", 2);
-
-//     pq.insert(element1);
-//     pq.insert(element2);
-//     pq.insert(element3);
-//     pq.insert(element4);
-//     pq.insert(element5);
-
-//     pq.remove();
-
-//     std::cout << element1.name << ": " << element1.priority << std::endl;
-//     std::cout << element2.name << ": " << element2.priority << std::endl;
-//     std::cout << element3.name << ": " << element3.priority << std::endl;
-//     std::cout << element4.name << ": " << element4.priority << std::endl;
-//     std::cout << element5.name << ": " << element5.priority << std::endl;
-//     return 0;
-// }

@@ -1,270 +1,204 @@
-// PQOrderedArray.cpp
-
-// This file is for implementation of the ordered array implementation
-// of the priority queue.
-
-#include <iostream>
-#include <string>
-#include <memory>
+// PQOrdered.cpp
+// Implement your Ordered Priority Queue in this file
 #include "PriorityQueue.h"
 #include "TestDriver.h"
+// Your code here
+#include <iostream>
+#include <string>
+#include <utility>
+#include <memory>
+
+namespace std{
+    template<class T> struct _Unique_if {
+        typedef unique_ptr<T> _Single_object;
+    };
+
+    template<class T> struct _Unique_if<T[]> {
+        typedef unique_ptr<T[]> _Unknown_bound;
+    };
+
+    template<class T, size_t N> struct _Unique_if<T[N]> {
+        typedef void _Known_bound;
+    };
+
+    template<class T, class... Args>
+    typename _Unique_if<T>::_Single_object
+    make_unique(Args&&... args) {
+        return unique_ptr<T>(new T(std::forward<Args>(args)...));
+    }
+
+    template<class T>
+    typename _Unique_if<T>::_Unknown_bound
+    make_unique(size_t n) {
+        typedef typename remove_extent<T>::type U;
+        return unique_ptr<T>(new U[n]());
+    }
+
+    template<class T, class... Args>
+    typename _Unique_if<T>::_Known_bound
+    make_unique(Args&&...) = delete;
+}
+
 using namespace std;
 
 // Default constructor
 PriorityQueue::PriorityQueue()
 {
-    max_capacity = DEFAULT_MAX_CAPACITY;
-    pq = make_unique<Element[]>(max_capacity);
+    this->max_capacity = DEFAULT_MAX_CAPACITY;
+    this->pq = make_unique<Element[]>(max_capacity);
 }
 
 // Parameterized constructor
 PriorityQueue::PriorityQueue(int size)
 {
-    max_capacity = size;
-    pq = make_unique<Element[]>(max_capacity);
+    this->max_capacity = size;
+    this->pq = make_unique<Element[]>(max_capacity);
 }
 
-// Inserts a new object into the priority queue. Returns true if
-// the insertion is successful. If the PQ is full, the insertion
-// is aborted, and the method returns false.
+// This function inserts a new element into the priority queue while maintaining the order of the priority queue
 bool PriorityQueue::insert(Element &element)
 {
-    if (isFull())
-        return false;
-
-    // The first object inserted into the PQ will have the highest priority
-    // because it has the lowest FIFO value
-    if (isEmpty())
-        element.fifo = 1;
-    else
-        element.fifo = pq[0].fifo + 1;
-
-    int index = size();
-    pq[index] = element;
-
-    // Iterate through the elements of the PQ
-    for (int i = index - 1; i >= 0; i--)
-    {
-        if (pq[i].priority >= pq[index].priority)
-            break;
-
-        // Swap the elements if the priority of the next element is higher
-        Element temp = pq[i];
-        pq[i] = pq[index];
-        pq[index] = temp;
-
-        index--;
+    bool success=false;
+    int index = 0;
+    Element temp;
+    if(!isFull()){
+        while(index<size() && pq[index].priority>=element.priority){
+            index++;
+        }
+        for(int i = size(); i > index; i--) {
+            pq[i] = pq[i-1];
+        }
+        pq[index] = element;
+        success = true;
     }
-    return true;
+    else{
+        cout<<"PriorityQueue is full"<<endl;
+    }
+    return success;
 }
 
-// The object of the highest priority must be the one returned by the
-// remove() method; and if multiple objects have the same priority,
-// the one in the queue the longest shall be returned, ie, FIFO
-// return order must be preserved for objects of identical priority.
-// Returns the default constructed Element if the PQ is empty.
+// This function removes the highest priority element from the priority queue
 Element PriorityQueue::remove()
 {
-    if (isEmpty())
-        return Element();
-
-    Element temp = pq[0];
-    int index = size() - 1;
-
-    // Move the last object of the list to the first position and decrement the size of the list
-    pq[0] = pq[index];
-    pq[index] = Element();
-
-    // Iterate through the elements of the PQ
-    for (int i = 1; i < size(); i++)
-    {
-        // If the priority of the previous element is higher, break
-        if (pq[i - 1].priority >= pq[i].priority)
-            break;
-
-        // Swap the elements if the priority of the next element is higher
-        Element temp = pq[i];
-        pq[i] = pq[i - 1];
-        pq[i - 1] = temp;
+    Element element;
+    if(!isEmpty()){
+        element.name = pq[0].name;
+        element.priority = pq[0].priority;
+        element.fifo = pq[0].fifo;
+        for(int i=0; i<size()-1; i++){
+            pq[i] = pq[i+1];
+        }
+        pq[size()-1].name = "None";
+        pq[size()-1].priority = -1;
+        pq[size()-1].fifo = 0;
     }
-    return temp;
+    else{
+        cout<<"PriorityQueue is empty"<<endl;
+    }
+    return element;
 }
 
-// Deletes all instances of the parameter from the PQ if found, and
-// returns true. Returns false if no match to the parameter obj is found.
+// This function deletes the first instance of the element from the priority queue
 bool PriorityQueue::del(Element &element)
 {
-    if (isEmpty())
-        return false;
-
-    // Iterate through the elements of the PQ
-    for (int i = 0; i < size(); i++)
-    {
-        // If the element is found, remove it from the PQ
-        if (pq[i].name == element.name)
-        {
-            int index = size() - 1;
-            pq[i] = pq[index];
-            pq[index] = Element();
-
-            // Iterate through the elements of the PQ
-            for (int i = 0; i < size(); i++)
-            {
-                // If the priority of the previous element is higher, break
-                if (pq[i - 1].priority >= pq[i].priority)
-                    break;
-
-                // Swap the elements if the priority of the next element is higher
-                Element temp = pq[i];
-                pq[i] = pq[i - 1];
-                pq[i - 1] = temp;
+    bool success = false;
+    if(!isEmpty()){
+        for(int i=0; i<size(); i++){
+            if(pq[i].name == element.name && pq[i].priority == element.priority && pq[i].fifo == element.fifo){
+                success = true;
+                for(int j=i; j<size()-1; j++){
+                    pq[j] = pq[j+1];
+                }
+                pq[size()-1].name = "None";
+                pq[size()-1].priority = -1;
+                pq[size()-1].fifo = 0;
+                break;
             }
-            return true;
         }
     }
-    return false;
+    else{
+        cout<<"PriorityQueue is empty"<<endl;
+    }
+    return success;
 }
 
-// Returns the object of highest priority in the PQ; if multiple
-// objects have the same highest priority, return the one that has
-// been in the PQ the longest, but does NOT remove it.
-// Returns default constructed Element if the PQ is empty.
+// This function returns the highest priority element from the priority queue without removing the element
 Element PriorityQueue::peek()
 {
-    if (isEmpty())
-        return Element();
-
-    return pq[0];
+    Element element;
+    if(!isEmpty()){
+        element.name = pq[0].name;
+        element.priority = pq[0].priority;
+        element.fifo = pq[0].fifo;
+    }
+    else{
+        cout<<"PriorityQueue is empty"<<endl;
+    }
+    return element;
 }
 
-// Returns true if the pq contains the specified element
+// This function returns true if the priority queue contains the specified element
 bool PriorityQueue::contains(Element &element)
 {
-    if (isEmpty())
-        return false;
-
-    // Iterate through the elements of the PQ
-    for (int i = 0; i < size(); i++)
-    {
-        // If the element is found, return true
-        if (pq[i].name == element.name)
-            return true;
+    bool success = false;
+    if(!isEmpty()){
+        for(int i=0; i<size(); i++){
+            if(pq[i].name == element.name && pq[i].priority == element.priority && pq[i].fifo == element.fifo){
+                success = true;
+            }
+        }
     }
-    return false;
+    else{
+        cout<<"PriorityQueue is empty"<<endl;
+    }
+    return success;
 }
 
-// Returns the number of objects currently in the PQ.
+// This function returns the current size of the priority queue
 int PriorityQueue::size()
 {
-    int size = 0;
-
-    // Iterate through the elements of the PQ
-    for (int i = 0; i < max_capacity; i++)
-    {
-        // If the value of the element is not the default value, increment the size
-        if (pq[i].priority != -1)
-            size++;
+    int count = 0;
+    if(!isEmpty()){
+        for(int i=0; i<max_capacity; i++){
+            if(pq[i].priority != -1){
+                count++;
+            }
+        }
     }
-    return size;
+    return count;
 }
 
-// Returns the PQ to its default state.
+// This function clears the priority queue
 void PriorityQueue::clear()
 {
-    for (int i = 0; i < max_capacity; i++)
-        pq[i] = Element();
+    if(!isEmpty()){
+        for(int i=0; i<size(); i++){
+            pq[i].name = "None";
+            pq[i].priority = -1;
+            pq[i].fifo = 0;
+        }
+    }
 }
 
-// Returns true if the PQ is empty
+// This function returns true if the priority queue is empty
 bool PriorityQueue::isEmpty()
 {
     return size() == 0;
 }
 
-// Returns true if the PQ is full
+// This function returns true if the priority queue is full
 bool PriorityQueue::isFull()
 {
     return size() == max_capacity;
 }
 
-// Run the test
-// int main()
-// {
-//     // Test the ordered array implementation
-//     PriorityQueue pq1(5);
-//     Element element1("element 1", 1);
-//     Element element2("element 2", 2);
-//     Element element3("element 3", 3);
-//     Element element4("element 4", 4);
-//     Element element5("element 5", 5);
-//     Element element6("element 6", 1);
-
-//     pq1.insert(element1);
-//     pq1.insert(element2);
-//     pq1.insert(element3);
-//     pq1.insert(element4);
-//     pq1.insert(element5);
-//     pq1.insert(element6);
-
-//     cout << "The elements of the first PQ are: " << endl;
-//     while(!pq1.isEmpty())
-//     {
-//         Element temp = pq1.remove();
-//         cout << temp.name << " " << temp.priority << endl;
-//     }
-//     cout << endl;
-
-//     // Test the linked list implementation
-//     PriorityQueue pq2(5);
-//     Element element7("element 1", 1);
-//     Element element8("element 2", 2);
-//     Element element9("element 3", 3);
-//     Element element10("element 4", 4);
-//     Element element11("element 5", 5);
-//     Element element12("element 6", 1);
-
-//     pq2.insert(element7);
-//     pq2.insert(element8);
-//     pq2.insert(element9);
-//     pq2.insert(element10);
-//     pq2.insert(element11);
-//     pq2.insert(element12);
-
-//     cout << "The elements of the second PQ are: " << endl;
-//     while(!pq2.isEmpty())
-//     {
-//         Element temp = pq2.remove();
-//         cout << temp.name << " " << temp.priority << endl;
-//     }
-//     cout << endl;
-
-//     // Test the binary heap implementation
-//     PriorityQueue pq3(5);
-//     Element element13("element 1", 1);
-//     Element element14("element 2", 2);
-//     Element element15("element 3", 3);
-//     Element element16("element 4", 4);
-//     Element element17("element 5", 5);
-//     Element element18("element 6", 1);
-
-//     pq3.insert(element13);
-//     pq3.insert(element14);
-//     pq3.insert(element15);
-//     pq3.insert(element16);
-//     pq3.insert(element17);
-//     pq3.insert(element18);
-
-//     cout << "The elements of the third PQ are: " << endl;
-//     while(!pq3.isEmpty())
-//     {
-//         Element temp = pq3.remove();
-//         cout << temp.name << " " << temp.priority << endl;
-//     }
-//     cout << endl;
-
-//     return 0;
-// }
-
+/* IMPORTANT: main() must be EXACTLY how it was provided
+** provided to you when you submit your assignment.
+**
+** If you edit main for your own testing purposes,
+** you MUST restore it to how it was provided to
+** you before submission.
+*/
 int main()
 {
     test_PQOrdered();
