@@ -1,24 +1,45 @@
+//// PQLinkedList.cpp
+//// Implement your Linked List Priority Queue in this file.
+//#include "PriorityQueue.h"
+//#include "TestDriver.h"
+//// Your code here
+//// Note: For linked list do NOT use std::unique_ptr<Element[]> pq;
+//// You must create your own node struct in this file.
+//
+//
+//
+///* IMPORTANT: main() must be EXACTLY how it was provided
+//** provided to you when you submit your assignment.
+//**
+//** If you edit main for your own testing purposes,
+//** you MUST restore it to how it was provided to
+//** you before submission.
+//*/
+//int main() {
+//    test_PQLinkedList();
+//    return 0;
+//}
+//
+
 // PQLinkedList.cpp
-// Implement your Linked List Priority Queue in this file.
+
 #include "PriorityQueue.h"
-#include "TestDriver.h"
-// Your code here
-// Note: For linked list do NOT use std::unique_ptr<Element[]> pq;
-// You must create your own node struct in this file.
 #include <iostream>
+#include <memory>
+using namespace std;
 
 
-
-// Constructor
-PriorityQueue::PriorityQueue() {
+PriorityQueue::PriorityQueue()
+{
     max_capacity = DEFAULT_MAX_CAPACITY;
-    pq = std::make_unique<Element[]>(DEFAULT_MAX_CAPACITY);
+    pq = make_unique<Element[]>(max_capacity);
 }
 
 // Parameterized constructor
-PriorityQueue::PriorityQueue(int size) {
+PriorityQueue::PriorityQueue(int size)
+{
     max_capacity = size;
-    pq = std::make_unique<Element[]>(size);
+    pq = make_unique<Element[]>(max_capacity);
 }
 
 bool PriorityQueue::insert(Element &element) {
@@ -138,37 +159,19 @@ bool PriorityQueue::isFull() {
     return size() == max_capacity;
 }
 
-/* IMPORTANT: main() must be EXACTLY how it was provided
-** provided to you when you submit your assignment.
-**
-** If you edit main for your own testing purposes,
-** you MUST restore it to how it was provided to
-** you before submission.
-*/
 int main() {
-   test_PQLinkedList();
-   return 0;
+    PriorityQueue queue;
+    Element element = Element("test", 0);
+    queue.insert(element);
+    element = Element("test2", 0);
+    queue.insert(element);
+    element = Element("test3", 1);
+    queue.insert(element);
+
+    std::cout << queue.peek().name << std::endl;
+    queue.remove();
+    std::cout << queue.peek().name << std::endl;
+    queue.remove();
+    std::cout << queue.peek().name << std::endl;
+    queue.remove();
 }
-
-
-/*
-Uncomment the below code to quickly test
-*/
-
-
-// int main() {
-//     PriorityQueue queue;
-//     Element element = Element("test", 0);
-//     queue.insert(element);
-//     element = Element("test2", 0);
-//     queue.insert(element);
-//     element = Element("test3", 1);
-//     queue.insert(element);
-
-//     std::cout << queue.peek().name << std::endl;
-//     queue.remove();
-//     std::cout << queue.peek().name << std::endl;
-//     queue.remove();
-//     std::cout << queue.peek().name << std::endl;
-//     queue.remove();
-// }
