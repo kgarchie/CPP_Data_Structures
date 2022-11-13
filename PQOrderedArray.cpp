@@ -2,7 +2,13 @@
 #include "TestDriver.h"
 #include "PriorityQueue.h"
 #include <iostream>
-#include <memory>
+
+
+// make_unique is a C++14 feature so we make our own implementation
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args) {
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
 
 // Constructor
 PriorityQueue::PriorityQueue()
