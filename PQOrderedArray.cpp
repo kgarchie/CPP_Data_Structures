@@ -2,6 +2,7 @@
 #include "TestDriver.h"
 #include "PriorityQueue.h"
 #include <iostream>
+#include <memory>
 
 // Constructor
 PriorityQueue::PriorityQueue()

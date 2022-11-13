@@ -6,6 +6,7 @@
 // Note: For linked list do NOT use std::unique_ptr<Element[]> pq;
 // You must create your own node struct in this file.
 #include <iostream>
+#include <memory>
 
 
 // Constructor
