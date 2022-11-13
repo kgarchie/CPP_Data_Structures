@@ -4,161 +4,158 @@
 #include "TestDriver.h"
 // Your code here
 #include <iostream>
+#include <string>
+#include <utility>
+#include <memory>
 
-// Constructor
+using namespace std;
+
+// Default constructor
 PriorityQueue::PriorityQueue()
 {
-    max_capacity = DEFAULT_MAX_CAPACITY;
-    pq = std::make_unique<Element[]>(DEFAULT_MAX_CAPACITY);
+    this->max_capacity = DEFAULT_MAX_CAPACITY;
+    this->pq = make_unique<Element[]>(max_capacity);
 }
 
 // Parameterized constructor
 PriorityQueue::PriorityQueue(int size)
 {
-    max_capacity = size;
-    pq = std::make_unique<Element[]>(size);
+    this->max_capacity = size;
+    this->pq = make_unique<Element[]>(max_capacity);
 }
 
+// This function inserts a new element into the priority queue while maintaining the order of the priority queue
 bool PriorityQueue::insert(Element &element)
 {
-    if (size() == max_capacity)
-    {
-        return false;
-    }
-
-    if (size() == 0)
-    {
-        pq[0] = element;
-        return true;
-    }
-
-    // find correct insertion point
-    int insertIndex = 0;
-    // compare priorities
-    if (pq[0].priority < element.priority)
-    {
-    }
-    else if (pq[0].priority > element.priority)
-    {
-    }
-    else
-    {
-        // compare fifo
-        if (pq[0].fifo < element.fifo)
-        {
+    bool success=false;
+    int index = 0;
+    Element temp;
+    if(!isFull()){
+        while(index<size() && pq[index].priority>=element.priority){
+            index++;
         }
-        else if (pq[0].fifo > element.fifo)
-        {
+        for(int i = size(); i > index; i--) {
+            pq[i] = pq[i-1];
         }
+        pq[index] = element;
+        success = true;
     }
-    // insert element
-    pq[insertIndex] = element;
-    return true;
+    else{
+        cout<<"PriorityQueue is full"<<endl;
+    }
+    return success;
 }
 
+// This function removes the highest priority element from the priority queue
 Element PriorityQueue::remove()
 {
-    if (isEmpty())
-    {
-        Element element;
-        return element;
+    Element element;
+    if(!isEmpty()){
+        element.name = pq[0].name;
+        element.priority = pq[0].priority;
+        element.fifo = pq[0].fifo;
+        for(int i=0; i<size()-1; i++){
+            pq[i] = pq[i+1];
+        }
+        pq[size()-1].name = "None";
+        pq[size()-1].priority = -1;
+        pq[size()-1].fifo = 0;
     }
-
-    Element element = pq[0];
-    // shift all other cells down by one
-    for (int i = 0; i < size() - 1; i++)
-    {
-        pq[i] = pq[i + 1];
+    else{
+        cout<<"PriorityQueue is empty"<<endl;
     }
-
     return element;
 }
 
+// This function deletes the first instance of the element from the priority queue
 bool PriorityQueue::del(Element &element)
 {
-    if (isEmpty())
-    {
-        return false;
-    }
-
-    bool isFound = false;
-    // find index of element to delete
-    int i = 0;
-    for (; i < size(); i++)
-    {
-        if (pq[i].name == element.name)
-        {
-            isFound = true;
-            break;
+    bool success = false;
+    if(!isEmpty()){
+        for(int i=0; i<size(); i++){
+            if(pq[i].name == element.name && pq[i].priority == element.priority && pq[i].fifo == element.fifo){
+                success = true;
+                for(int j=i; j<size()-1; j++){
+                    pq[j] = pq[j+1];
+                }
+                pq[size()-1].name = "None";
+                pq[size()-1].priority = -1;
+                pq[size()-1].fifo = 0;
+                break;
+            }
         }
     }
-
-    // if element is not found, return false
-    if (!isFound)
-    {
-        return false;
+    else{
+        cout<<"PriorityQueue is empty"<<endl;
     }
-
-    // shift all other cells down by one
-    for (int j = i; j < size(); j++)
-    {
-        pq[j] = pq[j + 1];
-    }
-
-    return true;
+    return success;
 }
 
+// This function returns the highest priority element from the priority queue without removing the element
 Element PriorityQueue::peek()
 {
-    if (isEmpty())
-    {
-        Element element;
-        return element;
+    Element element;
+    if(!isEmpty()){
+        element.name = pq[0].name;
+        element.priority = pq[0].priority;
+        element.fifo = pq[0].fifo;
     }
-
-    return pq[0];
+    else{
+        cout<<"PriorityQueue is empty"<<endl;
+    }
+    return element;
 }
 
+// This function returns true if the priority queue contains the specified element
 bool PriorityQueue::contains(Element &element)
 {
-    for (int i = 0; i < size(); i++)
-    {
-        if (pq[i].name == element.name)
-        {
-            return true;
+    bool success = false;
+    if(!isEmpty()){
+        for(int i=0; i<size(); i++){
+            if(pq[i].name == element.name && pq[i].priority == element.priority && pq[i].fifo == element.fifo){
+                success = true;
+            }
         }
     }
-    return false;
+    else{
+        cout<<"PriorityQueue is empty"<<endl;
+    }
+    return success;
 }
 
+// This function returns the current size of the priority queue
 int PriorityQueue::size()
 {
-    // iterate through all elements
     int count = 0;
-    for (int i = 0; i < max_capacity; i++)
-    {
-        if (pq[i].name != "None")
-        {
-            count++;
+    if(!isEmpty()){
+        for(int i=0; i<max_capacity; i++){
+            if(pq[i].priority != -1){
+                count++;
+            }
         }
     }
     return count;
 }
 
+// This function clears the priority queue
 void PriorityQueue::clear()
 {
-    for (int i = 0; i < max_capacity; i++)
-    {
-        pq[i].name = "None";
-        pq[i].priority = -1;
+    if(!isEmpty()){
+        for(int i=0; i<size(); i++){
+            pq[i].name = "None";
+            pq[i].priority = -1;
+            pq[i].fifo = 0;
+        }
     }
 }
 
+// This function returns true if the priority queue is empty
 bool PriorityQueue::isEmpty()
 {
     return size() == 0;
 }
 
+// This function returns true if the priority queue is full
 bool PriorityQueue::isFull()
 {
     return size() == max_capacity;
